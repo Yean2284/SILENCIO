@@ -170,6 +170,7 @@
             const [isProc, setIsProc] = useState(false);
             const [prog, setProg] = useState(0);
             const [url, setUrl] = useState(null);
+            const [fileName, setFileName] = useState('');
             const audioCtx = useRef(null);
 
             const processAudio = async () => {
@@ -203,6 +204,8 @@
                         if (i % 1000000 === 0) await new Promise(r => setTimeout(r, 0));
                     }
                     
+                    setProg(50);
+                    
                     const enc = new lamejs.Mp3Encoder(1, rate, 128);
                     const chunks = [];
                     for (let i = 0; i < outIdx; i += 1152) {
@@ -215,25 +218,63 @@
                         const b = enc.encodeBuffer(i16);
                         if (b.length > 0) chunks.push(new Uint8Array(b));
                         if (i % 400000 === 0) {
-                            setProg(Math.floor(40 + (i / outIdx) * 55));
+                            setProg(Math.floor(50 + (i / outIdx) * 45));
                             await new Promise(r => setTimeout(r, 0)); 
                         }
                     }
                     chunks.push(new Uint8Array(enc.flush()));
-                    setUrl(URL.createObjectURL(new Blob(chunks, { type: 'audio/mp3' })));
+                    
+                    // VOLVER A BLOB URL
+                    const blob = new Blob(chunks, { type: 'audio/mp3' });
+                    const blobUrl = URL.createObjectURL(blob);
+                    setUrl(blobUrl);
+                    
+                    const baseName = file.name.replace(/\.[^/.]+$/, "");
+                    setFileName(`${baseName}_optimizado.mp3`);
                     setProg(100);
-                } catch (e) { alert("Error de memoria."); }
-                setIsProc(false);
+                    setIsProc(false);
+                    
+                } catch (e) { 
+                    alert("Error: " + e.message); 
+                    setIsProc(false);
+                }
+            };
+
+            const downloadFile = async () => {
+                try {
+                    // Obtener el blob del URL
+                    const response = await fetch(url);
+                    const blob = await response.blob();
+                    
+                    // Método 1: Usar la API nativa de Android si existe
+                    if (window.Android && window.Android.downloadFile) {
+                        window.Android.downloadFile(url, fileName);
+                    } 
+                    // Método 2: Crear enlace temporal
+                    else {
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = fileName || `audio_${Date.now()}.mp3`;
+                        link.style.display = 'none';
+                        document.body.appendChild(link);
+                        link.click();
+                        
+                        // Pequeño delay antes de remover
+                        setTimeout(() => {
+                            document.body.removeChild(link);
+                        }, 100);
+                    }
+                } catch (e) {
+                    alert("Error al descargar: " + e.message);
+                }
             };
 
             return (
                 <div className="min-h-screen flex flex-col items-center justify-center p-6 relative">
-                    {/* Elementos decorativos de fondo */}
                     <div className="absolute top-20 left-10 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl"></div>
                     <div className="absolute bottom-20 right-10 w-40 h-40 bg-pink-500/10 rounded-full blur-3xl"></div>
                     
                     <div className="w-full max-w-md card-pro p-10 rounded-[3rem] shadow-2xl floating">
-                        {/* Logo/Icono principal */}
                         <div className="flex justify-center mb-6">
                             <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center text-4xl shadow-lg pulse-glow">
                                 🎵
@@ -248,7 +289,6 @@
                             Optimiza tus audios eliminando silencios prolongados
                         </p>
                         
-                        {/* Instrucciones de uso */}
                         <div className="bg-purple-900/20 border border-purple-500/20 rounded-2xl p-5 mb-8">
                             <h2 className="text-xs font-black text-purple-300 mb-3 flex items-center gap-2">
                                 <span>ℹ️</span> CÓMO USAR
@@ -313,15 +353,20 @@
                             </button>
                         ) : (
                             <div className="space-y-4">
-                                <a 
-                                    href={url} 
-                                    download="audio_optimizado.mp3" 
-                                    className="btn-success w-full py-5 rounded-2xl font-black text-lg text-center block shadow-xl"
+                                <button 
+                                    onClick={downloadFile}
+                                    className="btn-success w-full py-5 rounded-2xl font-black text-lg shadow-xl"
                                 >
                                     ⬇️ DESCARGAR MP3
-                                </a>
+                                </button>
                                 <button 
-                                    onClick={() => { setUrl(null); setFile(null); setProg(0); }} 
+                                    onClick={() => { 
+                                        URL.revokeObjectURL(url);
+                                        setUrl(null); 
+                                        setFile(null); 
+                                        setProg(0); 
+                                        setFileName('');
+                                    }} 
                                     className="w-full text-xs text-purple-400 hover:text-purple-300 uppercase font-bold tracking-widest text-center py-3 rounded-xl bg-slate-900/30 hover:bg-slate-900/50 transition-all"
                                 >
                                     🔄 Procesar otro audio
@@ -330,7 +375,6 @@
                         )}
                     </div>
                     
-                    {/* Badge del desarrollador */}
                     <div className="mt-10 developer-badge px-8 py-4 rounded-2xl shadow-lg">
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-lg">

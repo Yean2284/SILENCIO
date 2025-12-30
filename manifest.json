@@ -1,26 +1,15 @@
 {
-  "short_name": "TruncarApp",
-  "name": "Truncar Silencio Pro",
-  "description": "Herramienta profesional para eliminar silencios de audios MP3 localmente.",
+  "short_name": "TruncarPro",
+  "name": "Truncar Silencio Pro: Audio & Video",
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "https://cdn-icons-png.flaticon.com/512/727/727218.png",
       "type": "image/png",
-      "sizes": "192x192",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "icon-512.png",
-      "type": "image/png",
-      "sizes": "512x512",
-      "purpose": "any maskable"
+      "sizes": "512x512"
     }
   ],
-  "start_url": "./index.html",
+  "start_url": ".",
   "display": "standalone",
-  "orientation": "portrait",
-  "theme_color": "#7c3aed",
-  "background_color": "#0f172a",
-  "scope": "/",
-  "id": "truncar-silencio-pro"
+  "theme_color": "#0f172a",
+  "background_color": "#0f172a"
 }
